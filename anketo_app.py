@@ -4,6 +4,9 @@ import numpy as np
 from scipy import stats
 import seaborn as sns
 import matplotlib.pyplot as plt
+import os
+import matplotlib.pyplot as plt
+from matplotlib import font_manager
 
 # フォント設定
 font_path = os.path.abspath("ipaexg.ttf")  # 絶対パス
