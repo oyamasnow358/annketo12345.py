@@ -5,8 +5,8 @@ from scipy import stats
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
-import matplotlib.pyplot as plt
-from matplotlib import font_manager
+from matplotlib import font_manager as fm  # ← 修正
+import matplotlib as mpl  # ← これも必要
 
 # フォント設定
 font_path = os.path.abspath("ipaexg.ttf")  # 絶対パス
