@@ -5,6 +5,16 @@ from scipy import stats
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+# フォント設定
+font_path = os.path.abspath("ipaexg.ttf")  # 絶対パス
+if os.path.exists(font_path):
+    font_prop = fm.FontProperties(fname=font_path)
+    mpl.rcParams["font.family"] = font_prop.get_name()
+    plt.rc("font", family=font_prop.get_name())  # 追加
+    st.write(f"✅ フォント設定: {mpl.rcParams['font.family']}")
+else:
+    st.error("❌ フォントファイルが見つかりません。")
+    
 st.title("アンケートデータ統計分析アプリ")
 
 st.subheader("📥 サンプルCSVのダウンロード")
@@ -44,21 +54,29 @@ if uploaded_file:
         desc = df[selected_cols].describe().T
         desc["median"] = df[selected_cols].median()
         st.dataframe(desc)
-
+        
         # 棒グラフ表示
         st.write("平均値の棒グラフ")
-        means = df[selected_cols].mean()
         fig, ax = plt.subplots()
         means.plot(kind='bar', ax=ax)
-        ax.set_ylabel("平均値")
+        ax.set_ylabel("平均値", fontproperties=font_prop)  # 追加
+        ax.set_title("平均値の棒グラフ", fontproperties=font_prop)  # 任意
+        ax.tick_params(axis='x', labelrotation=45)
+        for label in ax.get_xticklabels():
+            label.set_fontproperties(font_prop)
         st.pyplot(fig)
+
 
         # 箱ひげ図表示
         st.write("箱ひげ図（Boxplot）")
         fig, ax = plt.subplots()
         sns.boxplot(data=df[selected_cols], ax=ax)
-        ax.set_ylabel("値")
+        ax.set_ylabel("値", fontproperties=font_prop)  # 追加
+        ax.set_title("箱ひげ図", fontproperties=font_prop)  # 任意
+        for label in ax.get_xticklabels():
+            label.set_fontproperties(font_prop)
         st.pyplot(fig)
+        
 
     st.subheader("② クロス集計")
     cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
@@ -72,7 +90,12 @@ if uploaded_file:
         st.write("クロス集計の棒グラフ")
         fig, ax = plt.subplots()
         cross_tab.plot(kind='bar', stacked=True, ax=ax)
-        st.pyplot(fig)
+        ax.set_title("クロス集計の棒グラフ", fontproperties=font_prop)
+        ax.set_xlabel(col1, fontproperties=font_prop)
+        ax.set_ylabel("件数", fontproperties=font_prop)
+        for label in ax.get_xticklabels():
+            label.set_fontproperties(font_prop)
+        st.pyplot(fig)        
 
     st.subheader("③ 群間比較：t検定／U検定")
     group_col = st.selectbox("グループを分ける列（例：担任・支援員）", cat_cols, key="test1")
@@ -101,7 +124,12 @@ if uploaded_file:
             st.write("比較結果の箱ひげ図")
             fig, ax = plt.subplots()
             sns.boxplot(x=group_col, y=value_col, data=df, ax=ax)
-            st.pyplot(fig)
+            ax.set_title("群間比較の箱ひげ図", fontproperties=font_prop)
+            ax.set_xlabel(group_col, fontproperties=font_prop)
+            ax.set_ylabel(value_col, fontproperties=font_prop)
+            for label in ax.get_xticklabels():
+                label.set_fontproperties(font_prop)
+            st.pyplot(fig)            
 
     st.subheader("④ 前後比較：対応のあるt検定 or ウィルコクソン検定")
     col_pre = st.selectbox("事前（Before）データ列", numeric_cols, key="before")
@@ -128,14 +156,21 @@ if uploaded_file:
             fig, ax = plt.subplots()
             means = pd.Series([before.mean(), after.mean()], index=["Before", "After"])
             means.plot(kind="bar", ax=ax)
-            ax.set_ylabel("平均値")
+            ax.set_ylabel("平均値", fontproperties=font_prop)
+            ax.set_title("前後比較の平均値", fontproperties=font_prop)
+            for label in ax.get_xticklabels():
+                label.set_fontproperties(font_prop)
             st.pyplot(fig)
+            
 
             # 前後の箱ひげ図
             st.write("前後比較の箱ひげ図")
             fig, ax = plt.subplots()
-            sns.boxplot(data=[before, after])
-            ax.set_xticklabels(["Before", "After"])
+            sns.boxplot(data=[before, after], ax=ax)
+            ax.set_xticklabels(["Before", "After"], fontproperties=font_prop)
+            ax.set_title("前後比較の箱ひげ図", fontproperties=font_prop)
+            ax.set_ylabel("値", fontproperties=font_prop)
             st.pyplot(fig)
+            
         else:
             st.warning("事前と事後のデータ数が一致していません。")
