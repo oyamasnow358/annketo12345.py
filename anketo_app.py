@@ -19,6 +19,68 @@ else:
     st.error("❌ フォントファイルが見つかりません。")
     
 st.title("アンケートデータ統計分析アプリ")
+# 初心者向け説明の表示切り替え
+if "show_explanation" not in st.session_state:
+           st.session_state.show_explanation = False
+        # ボタンを押すたびにセッションステートを切り替える
+if st.button("説明を表示/非表示"):
+           st.session_state.show_explanation = not st.session_state.show_explanation
+
+         # セッションステートに基づいて説明を表示
+if st.session_state.show_explanation:
+           st.markdown("""
+                       
+#### 🔍 記述統計とは？
+記述統計は、データの「ざっくりとした特徴」を数値で表す方法です。
+
+- **平均**：全員の得点を足して人数で割った「ふつうの点」。
+- **中央値**：ちょうど真ん中の人の点数（極端な値に影響されません）。
+- **標準偏差**：点数のバラつき具合。大きいと「個人差が大きい」、小さいと「だいたいみんな同じ」。
+
+グラフも使って、どんな傾向があるかをわかりやすく見てみましょう。
+
+                
+#### 🔄 クロス集計とは？
+クロス集計は、「ある2つの項目の関係」をまとめて見られる表です。
+
+たとえば、\
+- **「立場（担任・支援員）」と「満足度の回答」**をクロスして、\
+- どの立場の人がどんな回答をしているのかを比べることができます。
+
+積み上げ棒グラフも使って、\
+グループごとの違いを直感的に確認できます。
+
+
+#### ⚖ 群間比較とは？
+「2つのグループに違いがあるか？」を**統計的に判断する方法**です。
+
+- たとえば、「担任」と「支援員」で、満足度に違いがあるのか？
+- または、「男子」と「女子」で、点数の差はあるのか？など。
+
+使う検定方法は2つ：
+
+- **t検定**：データが「ふつうに分布」しているとき使います。
+- **U検定（マン・ホイットニー検定）**：データの分布がバラバラなときでも使えます（ノンパラメトリック）。
+
+**p値**が0.05未満だと「違いがある」と判断します。
+                
+#### ⏱ 前後比較とは？
+同じ人の**「ビフォー（事前）」と「アフター（事後）」**の変化を見る方法です。
+
+たとえば…
+
+- 研修の前と後で、先生の理解度は上がった？
+- 支援の前後で、子どもの行動はどう変わった？など。
+
+検定方法は2つ：
+
+- **対応のあるt検定**：変化が「正規分布」していそうなとき。
+- **ウィルコクソン検定**：変化がバラバラなときでも使える。
+
+グラフで「平均の変化」や「ばらつきの変化」も見てみましょう。
+           
+
+""")            
 
 st.subheader("📥 サンプルCSVのダウンロード")
 
@@ -50,25 +112,7 @@ if uploaded_file:
     st.write("データプレビュー", df.head())
 
     st.subheader("① 記述統計（平均・中央値・標準偏差）")
-    # 初心者向け説明の表示切り替え
-    if "show_explanation" not in st.session_state:
-               st.session_state.show_explanation = False
-            # ボタンを押すたびにセッションステートを切り替える
-    if st.button("説明を表示/非表示"):
-               st.session_state.show_explanation = not st.session_state.show_explanation
     
-             # セッションステートに基づいて説明を表示
-    if st.session_state.show_explanation:
-               st.markdown("""
-#### 🔍 記述統計とは？
-記述統計は、データの「ざっくりとした特徴」を数値で表す方法です。
-
-- **平均**：全員の得点を足して人数で割った「ふつうの点」。
-- **中央値**：ちょうど真ん中の人の点数（極端な値に影響されません）。
-- **標準偏差**：点数のバラつき具合。大きいと「個人差が大きい」、小さいと「だいたいみんな同じ」。
-
-グラフも使って、どんな傾向があるかをわかりやすく見てみましょう。
-""")
     numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
     selected_cols = st.multiselect("分析したい数値列を選択", numeric_cols)
 
@@ -100,26 +144,7 @@ if uploaded_file:
         st.pyplot(fig)        
         
     st.subheader("② クロス集計")
-    # 初心者向け説明の表示切り替え
-    if "show_explanation" not in st.session_state:
-               st.session_state.show_explanation = False
-            # ボタンを押すたびにセッションステートを切り替える
-    if st.button("説明を表示/非表示"):
-               st.session_state.show_explanation = not st.session_state.show_explanation
     
-             # セッションステートに基づいて説明を表示
-    if st.session_state.show_explanation:
-               st.markdown("""
-#### 🔄 クロス集計とは？
-クロス集計は、「ある2つの項目の関係」をまとめて見られる表です。
-
-たとえば、\
-- **「立場（担任・支援員）」と「満足度の回答」**をクロスして、\
-- どの立場の人がどんな回答をしているのかを比べることができます。
-
-積み上げ棒グラフも使って、\
-グループごとの違いを直感的に確認できます。
-""")
     cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     col1 = st.selectbox("行に使うカテゴリ列", cat_cols, key="cross1")
     col2 = st.selectbox("列に使うカテゴリ列", cat_cols, key="cross2")
@@ -139,29 +164,7 @@ if uploaded_file:
         st.pyplot(fig)                
 
     st.subheader("③ 群間比較：t検定／U検定")
-    # 初心者向け説明の表示切り替え
-    if "show_explanation" not in st.session_state:
-               st.session_state.show_explanation = False
-            # ボタンを押すたびにセッションステートを切り替える
-    if st.button("説明を表示/非表示"):
-               st.session_state.show_explanation = not st.session_state.show_explanation
     
-             # セッションステートに基づいて説明を表示
-    if st.session_state.show_explanation:
-               st.markdown("""
-#### ⚖ 群間比較とは？
-「2つのグループに違いがあるか？」を**統計的に判断する方法**です。
-
-- たとえば、「担任」と「支援員」で、満足度に違いがあるのか？
-- または、「男子」と「女子」で、点数の差はあるのか？など。
-
-使う検定方法は2つ：
-
-- **t検定**：データが「ふつうに分布」しているとき使います。
-- **U検定（マン・ホイットニー検定）**：データの分布がバラバラなときでも使えます（ノンパラメトリック）。
-
-**p値**が0.05未満だと「違いがある」と判断します。
-""")
     group_col = st.selectbox("グループを分ける列（例：担任・支援員）", cat_cols, key="test1")
     value_col = st.selectbox("数値データ列（例：満足度など）", numeric_cols, key="test2")
 
@@ -196,31 +199,7 @@ if uploaded_file:
             st.pyplot(fig)                      
 
     st.subheader("④ 前後比較：対応のあるt検定 or ウィルコクソン検定")
-    # 初心者向け説明の表示切り替え
-    if "show_explanation" not in st.session_state:
-               st.session_state.show_explanation = False
-            # ボタンを押すたびにセッションステートを切り替える
-    if st.button("説明を表示/非表示"):
-               st.session_state.show_explanation = not st.session_state.show_explanation
     
-             # セッションステートに基づいて説明を表示
-    if st.session_state.show_explanation:
-               st.markdown("""
-#### ⏱ 前後比較とは？
-同じ人の**「ビフォー（事前）」と「アフター（事後）」**の変化を見る方法です。
-
-たとえば…
-
-- 研修の前と後で、先生の理解度は上がった？
-- 支援の前後で、子どもの行動はどう変わった？など。
-
-検定方法は2つ：
-
-- **対応のあるt検定**：変化が「正規分布」していそうなとき。
-- **ウィルコクソン検定**：変化がバラバラなときでも使える。
-
-グラフで「平均の変化」や「ばらつきの変化」も見てみましょう。
-""")
     col_pre = st.selectbox("事前（Before）データ列", numeric_cols, key="before")
     col_post = st.selectbox("事後（After）データ列", numeric_cols, key="after")
 
