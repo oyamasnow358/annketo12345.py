@@ -50,7 +50,16 @@ if uploaded_file:
     st.write("データプレビュー", df.head())
 
     st.subheader("① 記述統計（平均・中央値・標準偏差）")
-    st.markdown("""
+    # 初心者向け説明の表示切り替え
+    if "show_explanation" not in st.session_state:
+               st.session_state.show_explanation = False
+            # ボタンを押すたびにセッションステートを切り替える
+    if st.button("説明を表示/非表示"):
+               st.session_state.show_explanation = not st.session_state.show_explanation
+    
+             # セッションステートに基づいて説明を表示
+    if st.session_state.show_explanation:
+               st.markdown("""
 #### 🔍 記述統計とは？
 記述統計は、データの「ざっくりとした特徴」を数値で表す方法です。
 
@@ -91,7 +100,16 @@ if uploaded_file:
         st.pyplot(fig)        
         
     st.subheader("② クロス集計")
-    st.markdown("""
+    # 初心者向け説明の表示切り替え
+    if "show_explanation" not in st.session_state:
+               st.session_state.show_explanation = False
+            # ボタンを押すたびにセッションステートを切り替える
+    if st.button("説明を表示/非表示"):
+               st.session_state.show_explanation = not st.session_state.show_explanation
+    
+             # セッションステートに基づいて説明を表示
+    if st.session_state.show_explanation:
+               st.markdown("""
 #### 🔄 クロス集計とは？
 クロス集計は、「ある2つの項目の関係」をまとめて見られる表です。
 
@@ -121,7 +139,16 @@ if uploaded_file:
         st.pyplot(fig)                
 
     st.subheader("③ 群間比較：t検定／U検定")
-    st.markdown("""
+    # 初心者向け説明の表示切り替え
+    if "show_explanation" not in st.session_state:
+               st.session_state.show_explanation = False
+            # ボタンを押すたびにセッションステートを切り替える
+    if st.button("説明を表示/非表示"):
+               st.session_state.show_explanation = not st.session_state.show_explanation
+    
+             # セッションステートに基づいて説明を表示
+    if st.session_state.show_explanation:
+               st.markdown("""
 #### ⚖ 群間比較とは？
 「2つのグループに違いがあるか？」を**統計的に判断する方法**です。
 
@@ -169,7 +196,16 @@ if uploaded_file:
             st.pyplot(fig)                      
 
     st.subheader("④ 前後比較：対応のあるt検定 or ウィルコクソン検定")
-    st.markdown("""
+    # 初心者向け説明の表示切り替え
+    if "show_explanation" not in st.session_state:
+               st.session_state.show_explanation = False
+            # ボタンを押すたびにセッションステートを切り替える
+    if st.button("説明を表示/非表示"):
+               st.session_state.show_explanation = not st.session_state.show_explanation
+    
+             # セッションステートに基づいて説明を表示
+    if st.session_state.show_explanation:
+               st.markdown("""
 #### ⏱ 前後比較とは？
 同じ人の**「ビフォー（事前）」と「アフター（事後）」**の変化を見る方法です。
 
