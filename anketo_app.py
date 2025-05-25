@@ -5,9 +5,9 @@ from scipy import stats
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-st.set_option('deprecation.showPyplotGlobalUse', False)
-
 st.title("アンケートデータ統計分析アプリ")
+
+
 
 # CSVアップロード
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type="csv")
