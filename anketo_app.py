@@ -5,15 +5,15 @@ from scipy import stats
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
-from matplotlib import font_manager as fm  # ← 修正
-import matplotlib as mpl  # ← これも必要
+from matplotlib import font_manager as fm
+import matplotlib as mpl
 
 # フォント設定
 font_path = os.path.abspath("ipaexg.ttf")  # 絶対パス
 if os.path.exists(font_path):
     font_prop = fm.FontProperties(fname=font_path)
     mpl.rcParams["font.family"] = font_prop.get_name()
-    plt.rc("font", family=font_prop.get_name())  # 追加
+    plt.rc("font", family=font_prop.get_name())
     st.write(f"✅ フォント設定: {mpl.rcParams['font.family']}")
 else:
     st.error("❌ フォントファイルが見つかりません。")
@@ -111,9 +111,12 @@ if uploaded_file:
     df = pd.read_csv(uploaded_file)
     st.write("データプレビュー", df.head())
 
+    # --- 数値列とカテゴリ列をここで一度定義しておくと、後続の処理で再利用できます ---
+    numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+    cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+
     st.subheader("① 記述統計（平均・中央値・標準偏差）")
     
-    numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
     selected_cols = st.multiselect("分析したい数値列を選択", numeric_cols)
 
     if selected_cols:
@@ -145,7 +148,6 @@ if uploaded_file:
         
     st.subheader("② クロス集計")
     
-    cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     col1 = st.selectbox("行に使うカテゴリ列", cat_cols, key="cross1")
     col2 = st.selectbox("列に使うカテゴリ列", cat_cols, key="cross2")
     if col1 and col2:
@@ -161,6 +163,10 @@ if uploaded_file:
         ax.set_ylabel("件数", fontproperties=font_prop)
         for label in ax.get_xticklabels():
             label.set_fontproperties(font_prop)
+        
+        # <<< 修正箇所：凡例の日本語フォントを設定 >>>
+        ax.legend(title=col2, prop=font_prop, title_fontproperties=font_prop)
+        
         st.pyplot(fig)                
 
     st.subheader("③ 群間比較：t検定／U検定")
@@ -230,7 +236,6 @@ if uploaded_file:
                 label.set_fontproperties(font_prop)
             st.pyplot(fig)            
             
-
             # 前後の箱ひげ図
             st.write("📦 前後比較の箱ひげ図")
             fig, ax = plt.subplots()
