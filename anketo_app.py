@@ -201,24 +201,21 @@ with tab3:
     if not group_col or not value_col:
         st.stop()
 
-    # --- グループ数に応じて処理を分岐 ---
     df_filtered = df[[group_col, value_col]].dropna()
-    groups = df_filtered[group_col].unique()
+    groups = sorted(df_filtered[group_col].unique()) # グループ名をソートして順序を固定
     group_count = len(groups)
 
-    # グラフの表示
     st.subheader("📊 箱ひげ図による可視化")
     fig = px.box(df_filtered, x=group_col, y=value_col, color=group_col,
-                 title=f"{group_col}別 {value_col}の分布", points="all")
+                 title=f"{group_col}別 {value_col}の分布", points="all",
+                 category_orders={group_col: groups}) # グラフの順序も固定
     st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("---")
 
-    # --- 検定の実行 ---
     if group_count < 2:
         st.warning("比較するには、グループが2つ以上必要です。")
 
-    # ----- 2群の比較 -----
     elif group_count == 2:
         st.subheader("検定方法の選択（2群）")
         g1 = df_filtered[df_filtered[group_col] == groups[0]][value_col]
@@ -228,9 +225,9 @@ with tab3:
         
         if "t検定" in test_type:
             st.info("_💡 **t検定**: 2つのグループの**平均値**に差があるか検定します。データが正規分布に近い場合に適しています。_")
-            stat, p = stats.ttest_ind(g1, g2, equal_var=False) # Welchのt検定
+            stat, p = stats.ttest_ind(g1, g2, equal_var=False)
         else:
-            st.info("_💡 **U検定**: 2つのグループの**分布**に差があるか検定します。正規分布に従わないデータに適しています。_")
+            st.info("_💡 **U検定**: 2つのグループの**分布**に差があるか検定します。データが正規分布に従わない場合や、順序尺度の場合に用います。_")
             stat, p = stats.mannwhitneyu(g1, g2, alternative="two-sided")
 
         st.subheader("検定結果")
@@ -243,16 +240,39 @@ with tab3:
         else:
             st.info(f"ℹ️ **結論**: {groups[0]}と{groups[1]}の間に、統計的に**有意な差があるとは言えません**。 (p ≥ 0.05)")
 
-    # ----- 3群以上の比較 -----
-    else:
+    else: # 3群以上の比較
         st.subheader(f"検定方法の選択（{group_count}群）")
         samples = [df_filtered[df_filtered[group_col] == g][value_col] for g in groups]
         
         test_type_multi = st.radio("検定方法の選択", ["分散分析ANOVA（平均値の差）", "クラスカル・ウォリス検定（分布の差）"], horizontal=True, key="multi_group_test")
         
+        # --- 多重比較の結果を分かりやすく表示する関数 ---
+        def display_posthoc_results(p_values_df):
+            st.write("**p値の比較表（p < 0.05 の組み合わせをハイライト）**")
+            st.dataframe(p_values_df.style.applymap(lambda x: 'background-color: #aaffaa' if x < 0.05 else ''))
+            
+            # 有意差のある組み合わせを文章でリストアップ
+            significant_pairs = []
+            # DataFrameの上三角行列をチェックして重複を避ける
+            for i, col in enumerate(p_values_df.columns):
+                for j, row_label in enumerate(p_values_df.index):
+                    if i < j:
+                        p_val = p_values_df.iloc[j, i]
+                        if p_val < 0.05:
+                            significant_pairs.append(f"**{col}** と **{row_label}**")
+            
+            st.markdown("---")
+            st.write("#### **結論の要約**")
+            if significant_pairs:
+                st.success("以下のグループの組み合わせで、統計的に有意な差が見られました。")
+                for pair in significant_pairs:
+                    st.markdown(f"- {pair}")
+            else:
+                st.info("いずれのグループの組み合わせにおいても、統計的に有意な差は見られませんでした。")
+
         # --- 分散分析(ANOVA) ---
         if "ANOVA" in test_type_multi:
-            st.info("_💡 **分散分析 (ANOVA)**: 3つ以上のグループ全体の**平均値**に差があるかを検定します。_")
+            st.info("_💡 **分散分析 (ANOVA)**: t検定を3群以上に拡張した手法です。各グループのデータが正規分布に近く、分散が等しい場合に、**平均値**の差を検定するのに適しています。_")
             stat, p = stats.f_oneway(*samples)
 
             st.subheader("検定結果（分散分析）")
@@ -261,22 +281,18 @@ with tab3:
             res_col2.metric(label="p値", value=f"{p:.4f}")
             
             if p < 0.05:
-                st.success("✅ **結論**: いずれかのグループ間に、統計的に**有意な差がある**と言えます。 (p < 0.05)")
+                st.success("✅ **全体の結果**: いずれかのグループ間に、統計的に**有意な差がある**と言えます。 (p < 0.05)")
                 st.markdown("---")
-                st.subheader("多重比較（Tukey's HSD検定）")
-                st.info("_どのグループ間に差があるかを具体的に確認します。`reject=True`の組み合わせに有意な差があります。_")
-                
-                tukey_result = pairwise_tukeyhsd(endog=df_filtered[value_col], groups=df_filtered[group_col], alpha=0.05)
-                df_tukey = pd.DataFrame(data=tukey_result._results_table.data[1:], columns=tukey_result._results_table.data[0])
-                st.dataframe(df_tukey)
-                df_to_csv_download_button(df_tukey, "posthoc_tukey_hsd_results")
-
+                st.subheader("多重比較（Tukey-HSD法）")
+                st.info("_どのグループ間に具体的な差があるかを確認します。_")
+                posthoc_p_values = sp.posthoc_tukey(df_filtered, val_col=value_col, group_col=group_col)
+                display_posthoc_results(posthoc_p_values)
             else:
-                st.info("ℹ️ **結論**: グループ間に、統計的に**有意な差があるとは言えません**。 (p ≥ 0.05)")
+                st.info("ℹ️ **全体の結果**: グループ間に、統計的に**有意な差があるとは言えません**。 (p ≥ 0.05)")
 
         # --- クラスカル・ウォリス検定 ---
         else:
-            st.info("_💡 **クラスカル・ウォリス検定**: 3つ以上のグループ全体の**分布**に差があるかを検定します。_")
+            st.info("_💡 **クラスカル・ウォリス検定**: U検定を3群以上に拡張したノンパラメトリックな手法です。データが正規分布に従わない場合や、順序尺度の場合に、グループの**分布（中央値）**に差があるかを検定します。_")
             stat, p = stats.kruskal(*samples)
             
             st.subheader("検定結果（クラスカル・ウォリス検定）")
@@ -285,18 +301,14 @@ with tab3:
             res_col2.metric(label="p値", value=f"{p:.4f}")
 
             if p < 0.05:
-                st.success("✅ **結論**: いずれかのグループ間に、統計的に**有意な差がある**と言えます。 (p < 0.05)")
+                st.success("✅ **全体の結果**: いずれかのグループ間に、統計的に**有意な差がある**と言えます。 (p < 0.05)")
                 st.markdown("---")
-                st.subheader("多重比較（Dunn's検定）")
-                st.info("_どのグループ間に差があるかを具体的に確認します。表の値は調整済みp値です。p値が0.05未満の組み合わせに有意な差があります。_")
-                
-                # scikit-posthocsを使い、p値をHolm法で調整
-                dunn_p = sp.posthoc_dunn(df_filtered, val_col=value_col, group_col=group_col, p_adjust='holm')
-                st.dataframe(dunn_p.style.applymap(lambda x: 'background-color: #aaffaa' if x < 0.05 else ''))
-                df_to_csv_download_button(dunn_p, "posthoc_dunn_results")
-
+                st.subheader("多重比較（Dunn法）")
+                st.info("_どのグループ間に具体的な差があるかを確認します。_")
+                posthoc_p_values = sp.posthoc_dunn(df_filtered, val_col=value_col, group_col=group_col, p_adjust='holm')
+                display_posthoc_results(posthoc_p_values)
             else:
-                st.info("ℹ️ **結論**: グループ間に、統計的に**有意な差があるとは言えません**。 (p ≥ 0.05)")
+                st.info("ℹ️ **全体の結果**: グループ間に、統計的に**有意な差があるとは言えません**。 (p ≥ 0.05)")
 
 # --- タブ4: 前後比較 ---
 with tab4:
