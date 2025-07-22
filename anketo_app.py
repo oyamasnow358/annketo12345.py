@@ -113,7 +113,7 @@ numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
 cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
 # --- 分析タブ ---
-tab1, tab5, tab2, tab3, tab4 = st.tabs(["① 記述統計", "② 段階評価分析 ✨New", "③ クロス集計", "④ 群間比較", "⑤ 前後比較"])
+tab1, tab5, tab2, tab3, tab4 = st.tabs(["① 記述統計", "② 段階評価分析", "③ クロス集計", "④ 群間比較", "⑤ 前後比較"])
 
 # --- タブ1: 記述統計 ---
 with tab1:
