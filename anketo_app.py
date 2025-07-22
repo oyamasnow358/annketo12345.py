@@ -30,14 +30,14 @@ def df_to_csv_download_button(df, filename):
     )
 
 # --- フォント設定 (日本語対応) ---
-font_path = os.path.abspath("ipaexg.ttf")
-if os.path.exists(font_path):
-    font_prop = fm.FontProperties(fname=font_path)
-    mpl.rcParams["font.family"] = font_prop.get_name()
-    plt.rc("font", family=font_prop.get_name())
-else:
-    # フォントファイルがない場合でもアプリは動作するが、Matplotlibの日本語が文字化けする
-    st.warning("⚠️ 日本語フォントファイル 'ipaexg.ttf' が見つかりません。Matplotlibを使ったグラフの日本語が文字化けする可能性があります。")
+# font_path = os.path.abspath("ipaexg.ttf") # ローカル環境でフォントファイルを置く場合
+# if os.path.exists(font_path):
+#     font_prop = fm.FontProperties(fname=font_path)
+#     mpl.rcParams["font.family"] = font_prop.get_name()
+#     plt.rc("font", family=font_prop.get_name())
+# else:
+#     # フォントファイルがない場合でもアプリは動作するが、Matplotlibの日本語が文字化けする
+#     st.warning("⚠️ 日本語フォントファイルが見つかりません。Matplotlibを使ったグラフの日本語が文字化けする可能性があります。")
 
 
 # --- サイドバー ---
@@ -54,6 +54,7 @@ with st.sidebar:
         "所属": ["営業部", "開発部", "人事部", "開発部", "営業部", "人事部", "開発部", "営業部", "人事部"],
         "性別": ["男性", "女性", "男性", "男性", "男性", "女性", "男性", "女性", "男性"],
         "研修満足度": [3, 5, 4, 5, 2, 4, 4, 3, 5],
+        "講師満足度": [4, 5, 5, 4, 3, 5, 4, 4, 5],
         "業務知識テスト（事前）": [60, 55, 58, 70, 65, 62, 80, 59, 68],
         "業務知識テスト（事後）": [75, 85, 72, 88, 78, 80, 92, 75, 85]
     }
@@ -72,6 +73,9 @@ with st.sidebar:
         #### 🔍 記述統計
         データの平均、中央値、ばらつき（標準偏差）などを計算し、データ全体の基本的な特徴を把握します。
         
+        #### 📊 段階評価分析 (New!)
+        「満足度」など、1〜5段階で評価された項目について、回答の割合を円グラフで可視化します。「所属」などのカテゴリ別に割合を見ることもできます。
+
         #### 🔄 クロス集計
         「所属」と「性別」など、2つのカテゴリの関係性を表にまとめ、グループごとの傾向を視覚化します。
         
@@ -109,7 +113,7 @@ numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
 cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
 # --- 分析タブ ---
-tab1, tab2, tab3, tab4 = st.tabs(["① 記述統計", "② クロス集計", "③ 群間比較", "④ 前後比較"])
+tab1, tab5, tab2, tab3, tab4 = st.tabs(["① 記述統計", "② 段階評価分析 ✨New", "③ クロス集計", "④ 群間比較", "⑤ 前後比較"])
 
 # --- タブ1: 記述統計 ---
 with tab1:
@@ -126,25 +130,16 @@ with tab1:
 
         st.write("📊 **各項目の可視化**")
         
-        # --- ★★★★★ グラフの修正箇所 ★★★★★ ---
-        # 1. 各項目の平均値を計算
         df_mean = df[selected_cols_desc].mean().reset_index()
         df_mean.columns = ['項目', '平均値']
-
-        # 2. ロングフォーマットのデータを作成（箱ひげ図用）
         df_melted = df[selected_cols_desc].melt(var_name='項目', value_name='値')
         
         col1, col2 = st.columns(2)
         with col1:
-            # 3. 平均値のデータフレームを使って棒グラフを作成
             st.subheader("平均値の比較")
             fig_bar = px.bar(
-                df_mean,
-                x='項目',
-                y='平均値',
-                title='各項目の平均値',
-                color='項目',
-                text_auto=True # 棒グラフに数値を表示
+                df_mean, x='項目', y='平均値', title='各項目の平均値',
+                color='項目', text_auto=True
             )
             fig_bar.update_traces(textposition='outside')
             fig_bar.update_layout(showlegend=False, yaxis_title="平均値")
@@ -156,9 +151,115 @@ with tab1:
             fig_box.update_layout(showlegend=False, yaxis_title="値")
             st.plotly_chart(fig_box, use_container_width=True)
 
+# --- ★★★★★ ここからが追加した機能 ★★★★★ ---
+# --- タブ5: 段階評価分析 ---
+with tab5:
+    st.header("② 段階評価分析")
+    st.write("1〜5段階評価などのアンケート項目について、回答の割合を円グラフで可視化します。")
+    st.info("💡 「研修満足度」などの整数で評価された数値列を選択してください。")
+
+    col1_pie, col2_pie = st.columns(2)
+    with col1_pie:
+        # 分析対象の列を選択
+        pie_target_col = st.selectbox(
+            "分析したい段階評価の列を選択してください",
+            numeric_cols,
+            index=None,
+            placeholder="分析する列を選択...",
+            key="pie_target"
+        )
+    with col2_pie:
+        # グループ分けの列を選択
+        pie_group_col_options = ["(全体で集計)"] + cat_cols
+        pie_group_col = st.selectbox(
+            "グループ分けに使う列を選択してください（任意）",
+            pie_group_col_options,
+            key="pie_group"
+        )
+
+    if pie_target_col:
+        st.markdown("---")
+
+        # --- 全体での集計 ---
+        if pie_group_col == "(全体で集計)":
+            st.subheader(f"📊 「{pie_target_col}」の全体集計")
+            
+            # 欠損値を除外して集計
+            df_target = df.dropna(subset=[pie_target_col])
+            
+            # データ集計
+            df_counts = df_target[pie_target_col].value_counts().sort_index()
+            df_pie = df_counts.reset_index()
+            df_pie.columns = [pie_target_col, '人数']
+
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.write("**集計表**")
+                st.dataframe(df_pie, use_container_width=True)
+                df_to_csv_download_button(df_pie, f"pie_chart_data_{pie_target_col}")
+
+            with col2:
+                st.write("**円グラフ**")
+                fig_pie = px.pie(
+                    df_pie,
+                    names=pie_target_col,
+                    values='人数',
+                    title=f"「{pie_target_col}」の回答割合",
+                    hole=0.3 # ドーナツグラフにする
+                )
+                fig_pie.update_traces(textposition='inside', textinfo='percent+label', sort=False)
+                st.plotly_chart(fig_pie, use_container_width=True)
+
+        # --- グループ別の集計 ---
+        else:
+            st.subheader(f"📊 「{pie_group_col}」別 - 「{pie_target_col}」の集計")
+            groups = sorted(df[pie_group_col].dropna().unique())
+
+            for group in groups:
+                st.markdown(f"---")
+                st.markdown(f"#### **グループ: {group}**")
+                
+                # グループとターゲット列で欠損値を除外
+                df_filtered_pie = df.dropna(subset=[pie_group_col, pie_target_col])
+                df_filtered_pie = df_filtered_pie[df_filtered_pie[pie_group_col] == group]
+
+                if df_filtered_pie.empty:
+                    st.write("このグループには表示できるデータがありません。")
+                    continue
+
+                # データ集計
+                df_counts = df_filtered_pie[pie_target_col].value_counts().sort_index()
+                df_pie = df_counts.reset_index()
+                df_pie.columns = [pie_target_col, '人数']
+
+                col1, col2 = st.columns([1, 2])
+                with col1:
+                    st.write("**集計表**")
+                    st.dataframe(df_pie, use_container_width=True)
+                    df_to_csv_download_button(df_pie, f"pie_chart_data_{pie_group_col}_{group}_{pie_target_col}")
+
+                with col2:
+                    st.write("**円グラフ**")
+                    if df_pie.empty:
+                         st.write("表示するデータがありません。")
+                         continue
+                    fig_pie_group = px.pie(
+                        df_pie,
+                        names=pie_target_col,
+                        values='人数',
+                        title=f"「{pie_target_col}」の回答割合 ({group})",
+                        hole=0.3
+                    )
+                    fig_pie_group.update_traces(textposition='inside', textinfo='percent+label', sort=False)
+                    st.plotly_chart(fig_pie_group, use_container_width=True)
+    else:
+        st.info("👆 分析したい列と、必要に応じてグループ分けの列を選択してください。")
+
+# --- ★★★★★ 追加機能はここまで ★★★★★ ---
+
 # --- タブ2: クロス集計 ---
 with tab2:
-    st.header("② クロス集計")
+    st.header("③ クロス集計")
     st.write("2つのカテゴリ変数の関係性を表とグラフで確認します。")
     if len(cat_cols) < 2:
         st.warning("クロス集計を行うには、カテゴリ列が2つ以上必要です。")
@@ -188,7 +289,7 @@ with tab2:
 
 # --- タブ3: 群間比較 ---
 with tab3:
-    st.header("③ 群間比較：2群または多群の比較")
+    st.header("④ 群間比較：2群または多群の比較")
     st.write("選択したグループ間で、数値データに統計的に意味のある差（有意差）があるか検定します。")
     st.write("_グループ数が2つの場合はt検定/U検定を、3つ以上の場合は分散分析/クラスカル・ウォリス検定を自動的に実行します。_")
 
@@ -246,14 +347,11 @@ with tab3:
         
         test_type_multi = st.radio("検定方法の選択", ["分散分析ANOVA（平均値の差）", "クラスカル・ウォリス検定（分布の差）"], horizontal=True, key="multi_group_test")
         
-        # --- 多重比較の結果を分かりやすく表示する関数 ---
         def display_posthoc_results(p_values_df):
             st.write("**p値の比較表（p < 0.05 の組み合わせをハイライト）**")
             st.dataframe(p_values_df.style.applymap(lambda x: 'background-color: #aaffaa' if x < 0.05 else ''))
             
-            # 有意差のある組み合わせを文章でリストアップ
             significant_pairs = []
-            # DataFrameの上三角行列をチェックして重複を避ける
             for i, col in enumerate(p_values_df.columns):
                 for j, row_label in enumerate(p_values_df.index):
                     if i < j:
@@ -270,7 +368,6 @@ with tab3:
             else:
                 st.info("いずれのグループの組み合わせにおいても、統計的に有意な差は見られませんでした。")
 
-        # --- 分散分析(ANOVA) ---
         if "ANOVA" in test_type_multi:
             st.info("_💡 **分散分析 (ANOVA)**: t検定を3群以上に拡張した手法です。各グループのデータが正規分布に近く、分散が等しい場合に、**平均値**の差を検定するのに適しています。_")
             stat, p = stats.f_oneway(*samples)
@@ -290,7 +387,6 @@ with tab3:
             else:
                 st.info("ℹ️ **全体の結果**: グループ間に、統計的に**有意な差があるとは言えません**。 (p ≥ 0.05)")
 
-        # --- クラスカル・ウォリス検定 ---
         else:
             st.info("_💡 **クラスカル・ウォリス検定**: U検定を3群以上に拡張したノンパラメトリックな手法です。データが正規分布に従わない場合や、順序尺度の場合に、グループの**分布（中央値）**に差があるかを検定します。_")
             stat, p = stats.kruskal(*samples)
@@ -312,7 +408,7 @@ with tab3:
 
 # --- タブ4: 前後比較 ---
 with tab4:
-    st.header("④ 前後比較：対応のある検定")
+    st.header("⑤ 前後比較：対応のある検定")
     st.write("同じ対象に対する介入の前後などで、数値に統計的に意味のある変化があったか検定します。")
     col1_pre, col2_post = st.columns(2)
     with col1_pre:
@@ -324,7 +420,7 @@ with tab4:
         if col_pre == col_post:
             st.warning("事前と事後には異なる列を選択してください。")
         else:
-            temp_df = df[[col_pre, col_post]].dropna() # 欠損値を含む行をペアで削除
+            temp_df = df[[col_pre, col_post]].dropna() 
             before = temp_df[col_pre]
             after = temp_df[col_post]
             
