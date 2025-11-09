@@ -125,7 +125,7 @@ if st.session_state.get("show_guide", False):
     st.markdown("   - **💡 ヒント**: CSVファイルは、1行目が項目名（ヘッダー）で、各列が数値データやカテゴリデータになっていることを確認してください。")
     st.markdown("3. もし手元にデータがない場合は、「**サンプルCSVをダウンロード**」ボタンからサンプルデータをダウンロードして試すことができます。")
     st.markdown("4. ファイルがアップロードされると、「**アップロードしたデータのプレビュー**」を展開して、データが正しく読み込まれているか確認できます。")
-    st.image("https://i.imgur.com/MTu9ILO.png", caption="データアップロードとプレビューのイメージ") 
+    
     
     st.markdown("---")
 
@@ -136,7 +136,8 @@ if st.session_state.get("show_guide", False):
     st.markdown("- **③ クロス集計**: 2つのカテゴリ変数の関係性を表とグラフで確認します。")
     st.markdown("- **④ 群間比較**: 複数のグループ間で数値データに統計的に意味のある差があるか検定します。")
     st.markdown("- **⑤ 前後比較**: 同じ対象の介入前後での数値データに変化があったか検定します。")
-    st.image("https://i.imgur.com/rtWrnCP.png", caption="分析タブのイメージ") 
+    with st.expander("分析タブのイメージを表示"):
+        st.image("https://i.imgur.com/rtWrnCP.png", caption="分析タブのイメージ") 
 
     st.markdown("---")
 
@@ -147,19 +148,22 @@ if st.session_state.get("show_guide", False):
     st.markdown("1. 「**分析したい数値列を選択してください**」で、平均値や標準偏差などを計算したい列を選びます。複数選択可能です。")
     st.markdown("2. 選択すると、要約統計量（平均、中央値、標準偏差、最小値、最大値など）の表が表示されます。")
     st.markdown("3. グラフとして、**平均値の比較**（棒グラフ）と**データの分布**（箱ひげ図）が表示され、視覚的にデータの傾向を把握できます。")
-    st.image("https://i.imgur.com/koPRgx8.png", caption="記述統計のイメージ") 
+    with st.expander("記述統計のイメージを表示"):
+        st.image("https://i.imgur.com/koPRgx8.png", caption="記述統計のイメージ") 
 
     st.markdown("#### ② 段階評価分析")
     st.markdown("1. 「**分析したい段階評価の列を選択してください**」で、「満足度」のような1〜5段階評価の数値列を選びます。")
     st.markdown("2. 必要に応じて、「**グループ分けに使う列を選択してください（任意）**」で、「所属」などのカテゴリ列を選ぶと、グループごとの評価割合を比較できます。")
     st.markdown("3. 円グラフと集計表で、各評価段階の割合を確認できます。")
-    st.image("https://i.imgur.com/vmJzyt5.png", caption="段階評価分析のイメージ") 
+    with st.expander("段階評価分析のイメージを表示"):
+        st.image("https://i.imgur.com/vmJzyt5.png", caption="段階評価分析のイメージ") 
 
     st.markdown("#### ③ クロス集計")
     st.markdown("1. 「**行に使うカテゴリ列**」と「**列に使うカテゴリ列**」で、関係性を知りたい2つのカテゴリ列を選びます。")
     st.markdown("2. 選ぶとすぐにクロス集計表が表示され、各カテゴリの組み合わせごとの件数を確認できます。")
     st.markdown("3. 「**グラフの種類を選択**」で「積み上げ棒グラフ」または「グループ化棒グラフ」を選び、視覚的に傾向を比較します。")
-    st.image("https://i.imgur.com/YBemVdK.png", caption="クロス集計のイメージ") 
+    with st.expander("クロス集計のイメージを表示"):
+        st.image("https://i.imgur.com/YBemVdK.png", caption="クロス集計のイメージ") 
 
     st.markdown("#### ④ 群間比較：2群または多群の比較")
     st.markdown("1. 「**グループ分けに使う列**」で、比較したいグループ（例: 「所属」）の列を選びます。")
@@ -168,14 +172,16 @@ if st.session_state.get("show_guide", False):
     st.markdown("4. グループの数に応じて、適切な統計検定（2群ならt検定/U検定、3群以上なら分散分析/クラスカル・ウォリス検定）が提案されます。")
     st.markdown("5. 提案された検定方法を選択し、検定結果（検定統計量、p値）と統計的な結論（有意差があるか否か）を確認します。")
     st.markdown("   - **💡 ヒント**: p値が0.05未満であれば「有意な差がある」と判断されます。")
-    st.image("https://i.imgur.com/LXgRyk9.png", caption="群間比較のイメージ") 
+    with st.expander("群間比較のイメージを表示"):
+        st.image("https://i.imgur.com/LXgRyk9.png", caption="群間比較のイメージ") 
 
     st.markdown("#### ⑤ 前後比較：対応のある検定")
     st.markdown("1. 「**事前（Before）データ列**」と「**事後（After）データ列**」で、比較したい2つの数値データ列（例: 「業務知識テスト（事前）」と「業務知識テスト（事後）」）を選びます。")
     st.markdown("2. 「**使用する検定**」で「対応のあるt検定」または「ウィルコクソン符号順位検定」を選択します。")
     st.markdown("3. 検定結果（検定統計量、p値）と統計的な結論（有意な変化があったか否か）が表示されます。")
     st.markdown("4. 事前・事後の平均値を比較する棒グラフも表示されます。")
-    st.image("https://i.imgur.com/5sS5n4A.png", caption="前後比較のイメージ") 
+    with st.expander("前後比較のイメージを表示"):
+        st.image("https://i.imgur.com/5sS5n4A.png", caption="前後比較のイメージ") 
 
     st.markdown("---")
     st.markdown("### ステップ 4: 結果のダウンロードと統計用語の確認")
